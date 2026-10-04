@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marina Bay's Cafe Money Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #26150d;
+    --brown: #9b7952;
+    --teal: #17435a;
+    --cream: #e8e6df;
+    --paper: #faf8f4;
+    --line: #d9d3c6;
+    --good: #2f6b4f;
+    --bad: #a4372b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 16px;
+    line-height: 1.4;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header {
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    border-bottom: 5px solid var(--teal);
+  }
+  header h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(22px, 5vw, 32px);
+    margin: 0 0 2px;
+  }
+  header p {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    color: var(--brown);
+    margin: 0;
+  }
+  .grid { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  /* calendar */
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-head h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; margin: 0; }
+  .nav {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    font-size: 18px; cursor: pointer;
+  }
+  .nav:hover { background: var(--cream); }
+  .dow, .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .dow div { text-align: center; font-size: 12px; font-weight: 600; color: var(--brown); padding: 4px 0; }
+  .day {
+    aspect-ratio: 1 / 1.05;
+    border: 1px solid var(--line); background: #fff; border-radius: 8px;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--ink);
+    cursor: pointer; padding: 3px 2px; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start; gap: 1px;
+  }
+  .day:hover { border-color: var(--brown); }
+  .day.blank { visibility: hidden; }
+  .day small { font-size: 9px; color: var(--teal); font-weight: 600; line-height: 1.1; }
+  .day.today { border-color: var(--brown); box-shadow: inset 0 0 0 1px var(--brown); }
+  .day.sel { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .day.sel small { color: var(--cream); }
+  .today-btn {
+    margin-top: 10px; width: 100%; padding: 9px; border-radius: 8px;
+    border: 1px solid var(--brown); background: transparent; color: var(--ink);
+    font-family: inherit; font-weight: 600; cursor: pointer;
+  }
+  .today-btn:hover { background: var(--brown); color: #fff; }
+
+  /* counter */
+  .date-title { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; margin: 0 0 12px; }
+  .row {
+    display: grid; grid-template-columns: 64px auto 1fr auto;
+    align-items: center; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+  }
+  .denom { font-weight: 700; font-size: 17px; }
+  .ctrl { display: flex; align-items: center; gap: 6px; }
+  .btn {
+    width: 38px; height: 38px; border-radius: 8px; border: none;
+    font-size: 22px; font-weight: 700; cursor: pointer; color: #fff; line-height: 1;
+  }
+  .btn.plus { background: var(--teal); }
+  .btn.minus { background: var(--brown); }
+  .btn:active { transform: scale(.95); }
+  .qty {
+    width: 56px; height: 38px; text-align: center; font: inherit; font-weight: 600;
+    border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink);
+  }
+  .sub { text-align: right; font-weight: 600; min-width: 90px; }
+  .row .count-label { font-size: 12px; color: #6d5f52; }
+
+  .online { display: flex; align-items: center; gap: 10px; padding: 14px 0 6px; flex-wrap: wrap; }
+  .online label { font-weight: 700; }
+  .online input {
+    flex: 1; min-width: 140px; height: 42px; font: inherit; font-weight: 600; padding: 0 12px;
+    border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink);
+  }
+
+  .totals { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 460px) { .totals { grid-template-columns: 1fr; } }
+  .tot { border-radius: 10px; padding: 12px 14px; background: var(--cream); }
+  .tot span { display: block; font-size: 12px; font-weight: 600; color: #6d5f52; }
+  .tot b { font-size: 24px; }
+  .tot.main { background: var(--teal); color: #fff; }
+  .tot.main span { color: var(--cream); }
+
+  .actions { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .actions button {
+    padding: 9px 14px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+  }
+  .actions button:hover { background: var(--cream); }
+  .actions .danger { color: var(--bad); }
+  .saved { font-size: 12px; color: var(--good); align-self: center; margin-left: auto; }
+
+  :focus-visible { outline: 3px solid var(--brown); outline-offset: 2px; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .nav, .btn, .actions, .today-btn, #calPanel { display: none !important; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Marina Bay's Cafe Money Counter</h1>
+    <p>Calm in every cup</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" id="calPanel" aria-label="Calendar">
+      <div class="cal-head">
+        <button class="nav" id="prev" aria-label="Previous month">&#8249;</button>
+        <h2 id="monthTitle"></h2>
+        <button class="nav" id="next" aria-label="Next month">&#8250;</button>
+      </div>
+      <div class="dow">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div class="days" id="days"></div>
+      <button class="today-btn" id="todayBtn">Go to today</button>
+    </section>
+
+    <section class="panel" aria-label="Money counter">
+      <h2 class="date-title" id="dateTitle"></h2>
+      <div id="rows"></div>
+
+      <div class="online">
+        <label for="online">Online payment</label>
+        <input id="online" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Enter amount">
+      </div>
+
+      <div class="totals">
+        <div class="tot"><span>Total cash on hand</span><b id="cashTotal">₱0.00</b></div>
+        <div class="tot main"><span>Total money (cash + online)</span><b id="grandTotal">₱0.00</b></div>
+      </div>
+
+      <div class="actions">
+        <button id="print">Print</button>
+        <button id="clear" class="danger">Clear this day</button>
+        <span class="saved" id="saved"></span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var DENOMS = [1000, 500, 200, 100, 50, 20, 10, 5, 1];
+  var KEY = 'marinabays_money_v1';
+  var TZ = 'Asia/Manila';
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function peso(n) {
+    return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function short(n) {
+    return n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : String(Math.round(n));
+  }
+  // Today in the Philippines, as YYYY-MM-DD
+  function todayPH() {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { store = {}; }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
+    var s = document.getElementById('saved');
+    s.textContent = 'Saved';
+    clearTimeout(save.t);
+    save.t = setTimeout(function () { s.textContent = ''; }, 1200);
+  }
+  function getDay(d) {
+    if (!store[d]) store[d] = { counts: {}, online: 0 };
+    return store[d];
+  }
+  function cashOf(rec) {
+    var t = 0;
+    DENOMS.forEach(function (d) { t += d * (rec.counts[d] || 0); });
+    return t;
+  }
+  function totalOf(rec) { return cashOf(rec) + (Number(rec.online) || 0); }
+
+  var today = todayPH();
+  var selected = today;
+  var viewY = +today.slice(0, 4), viewM = +today.slice(5, 7) - 1;
+
+  // Build counter rows once
+  var rowsEl = document.getElementById('rows');
+  DENOMS.forEach(function (d) {
+    var r = document.createElement('div');
+    r.className = 'row';
+    r.innerHTML =
+      '<div class="denom">₱' + d.toLocaleString('en-PH') + '</div>' +
+      '<div class="ctrl">' +
+        '<button class="btn minus" aria-label="Minus ' + d + '" data-d="' + d + '" data-s="-1">&minus;</button>' +
+        '<input class="qty" type="number" inputmode="numeric" min="0" step="1" aria-label="Count of ' + d + '" data-d="' + d + '">' +
+        '<button class="btn plus" aria-label="Plus ' + d + '" data-d="' + d + '" data-s="1">+</button>' +
+      '</div>' +
+      '<div class="count-label"></div>' +
+      '<div class="sub" id="sub' + d + '">₱0.00</div>';
+    rowsEl.appendChild(r);
+  });
+
+  rowsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-d]');
+    if (!b) return;
+    var d = b.getAttribute('data-d'), s = +b.getAttribute('data-s');
+    var rec = getDay(selected);
+    rec.counts[d] = Math.max(0, (rec.counts[d] || 0) + s);
+    save(); renderCounter(); renderCalendar();
+  });
+  rowsEl.addEventListener('input', function (e) {
+    var i = e.target.closest('input[data-d]');
+    if (!i) return;
+    var rec = getDay(selected);
+    rec.counts[i.getAttribute('data-d')] = Math.max(0, Math.floor(+i.value) || 0);
+    save(); updateTotals(false); renderCalendar();
+  });
+  document.getElementById('online').addEventListener('input', function (e) {
+    getDay(selected).online = Math.max(0, +e.target.value || 0);
+    save(); updateTotals(false); renderCalendar();
+  });
+
+  function updateTotals(refreshInputs) {
+    var rec = getDay(selected);
+    DENOMS.forEach(function (d) {
+      document.getElementById('sub' + d).textContent = peso(d * (rec.counts[d] || 0));
+    });
+    document.getElementById('cashTotal').textContent = peso(cashOf(rec));
+    document.getElementById('grandTotal').textContent = peso(totalOf(rec));
+  }
+
+  function renderCounter() {
+    var rec = getDay(selected);
+    var parts = selected.split('-');
+    var dt = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+    document.getElementById('dateTitle').textContent = dt.toLocaleDateString('en-PH', {
+      timeZone: 'UTC', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    rowsEl.querySelectorAll('input.qty').forEach(function (i) {
+      i.value = rec.counts[i.getAttribute('data-d')] || 0;
+    });
+    rowsEl.querySelectorAll('.row').forEach(function (r, idx) {
+      var c = rec.counts[DENOMS[idx]] || 0;
+      r.querySelector('.count-label').textContent = c ? 'x ' + c : '';
+    });
+    document.getElementById('online').value = rec.online ? rec.online : '';
+    updateTotals(true);
+  }
+
+  function renderCalendar() {
+    document.getElementById('monthTitle').textContent = MONTHS[viewM] + ' ' + viewY;
+    var first = new Date(Date.UTC(viewY, viewM, 1)).getUTCDay();
+    var count = new Date(Date.UTC(viewY, viewM + 1, 0)).getUTCDate();
+    var html = '';
+    for (var i = 0; i < first; i++) html += '<div class="day blank"></div>';
+    for (var d = 1; d <= count; d++) {
+      var key = viewY + '-' + pad(viewM + 1) + '-' + pad(d);
+      var rec = store[key];
+      var tot = rec ? totalOf(rec) : 0;
+      var cls = 'day' + (key === today ? ' today' : '') + (key === selected ? ' sel' : '');
+      html += '<button class="' + cls + '" data-k="' + key + '">' + d +
+              (tot > 0 ? '<small>' + short(tot) + '</small>' : '') + '</button>';
+    }
+    document.getElementById('days').innerHTML = html;
+  }
+
+  document.getElementById('days').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-k]');
+    if (!b) return;
+    selected = b.getAttribute('data-k');
+    renderCalendar(); renderCounter();
+  });
+  document.getElementById('prev').addEventListener('click', function () {
+    viewM--; if (viewM < 0) { viewM = 11; viewY--; } renderCalendar();
+  });
+  document.getElementById('next').addEventListener('click', function () {
+    viewM++; if (viewM > 11) { viewM = 0; viewY++; } renderCalendar();
+  });
+  document.getElementById('todayBtn').addEventListener('click', function () {
+    today = todayPH(); selected = today;
+    viewY = +today.slice(0, 4); viewM = +today.slice(5, 7) - 1;
+    renderCalendar(); renderCounter();
+  });
+  document.getElementById('clear').addEventListener('click', function () {
+    if (confirm('Clear all counts for this day?')) {
+      delete store[selected]; save(); renderCounter(); renderCalendar();
+    }
+  });
+  document.getElementById('print').addEventListener('click', function () { window.print(); });
+
+  renderCalendar();
+  renderCounter();
+})();
+</script>
+</body>
+</html>
