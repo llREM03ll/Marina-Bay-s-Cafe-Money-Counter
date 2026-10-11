@@ -46,7 +46,18 @@
   }
   .top img { width: 32px; height: 32px; }
   .top b { font-size: 16px; font-weight: 650; }
-  .top span { display: block; font-size: 12px; color: var(--muted); }
+  .top span.sub { display: block; font-size: 12px; color: var(--muted); }
+  .top { padding-right: 12px; }
+  .apps { margin-left: auto; display: flex; gap: 2px; }
+  .apps a { padding: 8px 10px; font-size: 14px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; }
+  .apps a.on { color: var(--ink); font-weight: 650; border-bottom-color: var(--teal); }
+
+  .exp-sum { padding: 4px 16px 0; }
+  .exp-sum .ln { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .exp-sum .ln span:first-child { color: var(--muted); }
+  .exp-sum .ln.strong { font-weight: 650; }
+  .exp-sum .ln.strong span:first-child { color: var(--ink); }
+  .exp-link { display: inline-block; margin: 12px 16px 0; font-size: 14px; color: var(--teal); }
 
   /* views */
   main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -170,7 +181,11 @@
 <div class="app">
   <div class="top">
     <img src="icons/logo-64.png" alt="">
-    <div><b>Marina Bay's Cafe</b><span>Money counter</span></div>
+    <div><b>Marina Bay's Cafe</b><span class="sub">Money counter</span></div>
+    <nav class="apps" aria-label="Apps">
+      <a href="index.html" class="on">Counter</a>
+      <a href="expenses.html">Expenses</a>
+    </nav>
   </div>
 
   <main id="main">
@@ -188,6 +203,12 @@
         <label for="online">Online payment</label>
         <div class="money-input"><span>₱</span><input id="online" class="num" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div>
       </div>
+      <div class="exp-sum" id="expSum">
+        <div class="ln"><span>Expenses paid in cash</span><span class="num" id="expCash">₱0.00</span></div>
+        <div class="ln"><span>Expenses paid online</span><span class="num" id="expOnline">₱0.00</span></div>
+        <div class="ln strong"><span>Cash after expenses</span><span class="num" id="cashAfter">₱0.00</span></div>
+      </div>
+      <a class="exp-link" href="expenses.html">Add or view expenses for this day</a>
       <button class="link-btn" id="clear">Clear this day</button>
     </section>
 
@@ -304,8 +325,20 @@
   });
   $('online').addEventListener('focus', function (e) { e.target.select(); });
 
+  function expensesOf(k) {
+    var out = { cash: 0, online: 0 };
+    try {
+      var s = JSON.parse(localStorage.getItem('marinabays_expenses_v1')) || {};
+      ((s.days || {})[k] || []).forEach(function (x) { out[x.src === 'online' ? 'online' : 'cash'] += x.amt || 0; });
+    } catch (e) {}
+    return out;
+  }
   function paintTotals() {
     var rec = getDay(selected);
+    var ex = expensesOf(selected);
+    $('expCash').textContent = peso(ex.cash);
+    $('expOnline').textContent = peso(ex.online);
+    $('cashAfter').textContent = peso(cashOf(rec) - ex.cash);
     DENOMS.forEach(function (d) {
       var v = d * (rec.counts[d] || 0), el = $('sub' + d);
       el.textContent = peso(v); el.classList.toggle('zero', v === 0);
@@ -419,6 +452,8 @@
   };
 
   paintDay();
+  window.addEventListener('pageshow', paintTotals);
+  window.addEventListener('focus', paintTotals);
 
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     navigator.serviceWorker.register('sw.js').catch(function () {});

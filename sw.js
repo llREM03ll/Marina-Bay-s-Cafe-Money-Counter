@@ -1,8 +1,13 @@
-var CACHE = 'mbc-counter-v1';
+var CACHE = 'mbc-counter-v2';
 var FILES = [
   './',
   './index.html',
+  './expenses.html',
   './manifest.webmanifest',
+  './manifest-expenses.webmanifest',
+  './icons/exp-192.png',
+  './icons/exp-512.png',
+  './icons/exp-apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/logo-64.png',
