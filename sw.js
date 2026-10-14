@@ -1,18 +1,21 @@
-var CACHE = 'mbc-counter-v2';
+var CACHE = 'mbc-v5';
 var FILES = [
   './',
   './index.html',
+  './money-counter.html',
   './expenses.html',
-  './manifest.webmanifest',
+  './printers.html',
+  './printer.js',
+  './manifest-money-counter.webmanifest',
   './manifest-expenses.webmanifest',
-  './icons/exp-192.png',
-  './icons/exp-512.png',
-  './icons/exp-apple-touch-icon.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
+  './icons/favicon-32.png',
   './icons/logo-64.png',
-  './icons/apple-touch-icon.png',
-  './icons/favicon-32.png'
+  './icons/counter-192.png',
+  './icons/counter-512.png',
+  './icons/counter-apple-touch-icon.png',
+  './icons/expenses-192.png',
+  './icons/expenses-512.png',
+  './icons/expenses-apple-touch-icon.png'
 ];
 
 self.addEventListener('install', function (e) {

@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Expenses">
 <link rel="manifest" href="manifest-expenses.webmanifest">
 <link rel="icon" type="image/png" href="icons/favicon-32.png">
-<link rel="apple-touch-icon" href="icons/exp-apple-touch-icon.png">
+<link rel="apple-touch-icon" href="icons/expenses-apple-touch-icon.png">
 <style>
   :root {
     --ink: #1f1a17;
@@ -164,10 +164,10 @@
 <body>
 <div class="app">
   <div class="top">
-    <img src="icons/logo-64.png" alt="">
+    <a href="index.html" aria-label="Home" style="display:flex"><img src="icons/logo-64.png" alt=""></a>
     <div><b>Marina Bay's Cafe</b><span class="sub">Expenses</span></div>
     <nav class="apps" aria-label="Apps">
-      <a href="index.html">Counter</a>
+      <a href="money-counter.html">Counter</a>
       <a href="expenses.html" class="on">Expenses</a>
     </nav>
   </div>
@@ -209,6 +209,8 @@
 
       <div id="list"></div>
       <p class="cashline" id="cashline" hidden></p>
+      <button class="mb-print" id="printBtn">Print receipt</button>
+      <div style="height:16px"></div>
     </section>
 
     <!-- CALENDAR -->
@@ -240,6 +242,7 @@
       <button class="item" id="backup"><b>Save a backup</b><span>Downloads a file with all expenses and categories</span></button>
       <button class="item" id="restore"><b>Restore from a backup</b><span>Load a backup file saved earlier</span></button>
       <input type="file" id="file" accept=".json,application/json" hidden>
+      <div id="printerBox"></div>
       <p class="note">Removing a category does not change past expenses. Records are saved on this phone only, so save a backup once in a while.</p>
     </section>
   </main>
@@ -258,6 +261,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="printer.js"></script>
 <script>
 (function () {
   var KEY = 'marinabays_expenses_v1';
@@ -386,7 +390,7 @@
     if (c > 0) {
       cl.hidden = false;
       cl.innerHTML = 'Cash counted this day <b class="num">' + peso(c) + '</b>. After cash expenses <b class="num">' + peso(c - cash) +
-        '</b>. <a href="index.html">Open counter</a>';
+        '</b>. <a href="money-counter.html">Open counter</a>';
     } else { cl.hidden = true; }
   }
   $('list').addEventListener('click', function (e) { var b = e.target.closest('button[data-id]'); if (b) startEdit(b.getAttribute('data-id')); });
@@ -496,6 +500,32 @@
     $('main').scrollTop = 0;
   }
   document.querySelectorAll('.tab').forEach(function (t) { t.onclick = function () { show(t.getAttribute('data-v')); }; });
+
+  /* ---------- receipt ---------- */
+  function num(n) { return Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function receipt(p) {
+    var list = dayList(selected), cash = sumOf(list, 'cash'), online = sumOf(list, 'online');
+    p.header('Daily expenses', toUTC(selected).toLocaleDateString('en-PH', { timeZone: 'UTC', weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }));
+    if (!list.length) p.center('No expenses');
+    list.forEach(function (x) {
+      p.row(x.cat, num(x.amt));
+      p.text('  ' + (x.src === 'online' ? 'Online' : 'Cash') + (x.note ? ' - ' + x.note : ''), { indent: '  ' });
+    });
+    p.rule();
+    p.row('Paid in cash', num(cash));
+    p.row('Paid online', num(online));
+    p.row('TOTAL SPENT', num(cash + online), { b: true });
+    p.footer();
+  }
+  var pb = $('printBtn');
+  pb.onclick = async function () {
+    var old = pb.textContent; pb.disabled = true; pb.textContent = 'Printing...';
+    try {
+      var m = await MBPrinter.print('expense', receipt);
+      if (m) toast(m);
+    } finally { pb.disabled = false; pb.textContent = old; }
+  };
+  MBPrinter.mount($('printerBox'));
 
   // refresh the cash line when coming back from the counter
   window.addEventListener('pageshow', function () { paintDay(); });
